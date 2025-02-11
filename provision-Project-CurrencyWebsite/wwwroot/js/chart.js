@@ -36,7 +36,7 @@
         function generateChart(data) {
             $("#chart").empty(); // Clear previous chart
 
-            let width = 600, height = 400, margin = { top: 20, right: 50, bottom: 50, left: 60 };
+            let width = 600, height = 400, margin = { top: 20, right: 40, bottom: 50, left: 50 };
 
             let svg = d3.select("#chart")
                 .append("svg")
@@ -52,13 +52,12 @@
             // Sort data by date
             data.sort((a, b) => a.date - b.date);
 
-            // Calculate dynamic Y-axis range
+            // Calculate dynamic Y-axis range with smaller margins
             let minY = d3.min(data, d => d.forexBuying);
             let maxY = d3.max(data, d => d.forexBuying);
-            let range = (maxY - minY) * (3 / 2);
 
-            let yMin = minY - range;
-            let yMax = maxY + range;
+            let yMin = minY - (minY * 0.1); // 10% below minimum
+            let yMax = maxY + (maxY * 0.1); // 10% above maximum
 
             // Define scales
             let xScale = d3.scaleTime()
@@ -72,7 +71,10 @@
 
             // Define axes
             let xAxis = d3.axisBottom(xScale).tickFormat(d3.timeFormat("%Y-%m"));
-            let yAxis = d3.axisLeft(yScale).ticks(5).tickFormat(d3.format(".2s"));
+
+            let yAxis = d3.axisLeft(yScale)
+                .ticks(7)
+                .tickFormat(d => (d % 1 === 0 ? d : d3.format(".2f")(d))); // No .00, keeps precision if needed
 
             // Add grid lines
             svg.append("g")
@@ -131,7 +133,7 @@
             svg.selectAll("circle")
                 .on("mouseover", function (event, d) {
                     tooltip.style("display", "block")
-                        .html(`Date: ${d3.timeFormat("%Y-%m-%d")(d.date)}<br>Rate: ${d.forexBuying.toFixed(4)}`)
+                        .html(`Date: ${d3.timeFormat("%Y-%m-%d")(d.date)}<br>Rate: ${d.forexBuying}`)
                         .style("left", (event.pageX + 10) + "px")
                         .style("top", (event.pageY - 20) + "px");
                 })
