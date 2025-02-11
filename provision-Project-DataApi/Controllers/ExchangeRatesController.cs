@@ -14,7 +14,7 @@ public class ExchangeRatesController : ControllerBase
         _context = context;
     }
 
-    [HttpGet("fetch")]
+    [HttpGet]
     public async Task<IActionResult> FetchExchangeRates()
     {
         var endDate = DateTime.Today;
@@ -31,12 +31,5 @@ public class ExchangeRatesController : ControllerBase
         }
 
         return Ok("Exchange rates fetched and saved successfully.");
-    }
-
-    [HttpGet]
-    public async Task<IActionResult> GetExchangeRates()
-    {
-        var rates = await _context.ExchangeRates.ToListAsync();
-        return Ok(rates);
     }
 }
