@@ -13,7 +13,7 @@
             headers: { "Accept": "application/json" }, // Request JSON explicitly
             dataType: "json", // Expect JSON response
             success: function (data) {
-                console.log("Received data:", data); // ✅ Print the received data
+                console.log("Received data:", data);
 
                 if (data.length === 0) {
                     alert("No data found for this currency.");
@@ -22,7 +22,7 @@
                 generateChart(data);
             },
             error: function (xhr) {
-                console.error("AJAX Error:", xhr); // ✅ Print error details if request fails
+                console.error("AJAX Error:", xhr);
                 if (xhr.status === 404) {
                     alert("Currency not found.");
                 } else {
@@ -56,8 +56,8 @@
             let minY = d3.min(data, d => d.forexBuying);
             let maxY = d3.max(data, d => d.forexBuying);
 
-            let yMin = minY - (minY * 0.1); // 10% below minimum
-            let yMax = maxY + (maxY * 0.1); // 10% above maximum
+            let yMin = minY - (minY * 0.01); // 10% below minimum
+            let yMax = maxY + (maxY * 0.01); // 10% above maximum
 
             // Define scales
             let xScale = d3.scaleTime()
