@@ -34,7 +34,7 @@
 
 
         function generateChart(data) {
-            $("#chart").empty(); // Clear old chart
+            $("#chart").empty(); // Clear previous chart
 
             let width = 600, height = 400, margin = { top: 20, right: 50, bottom: 50, left: 60 };
 
@@ -52,19 +52,27 @@
             // Sort data by date
             data.sort((a, b) => a.date - b.date);
 
+            // Calculate dynamic Y-axis range
+            let minY = d3.min(data, d => d.forexBuying);
+            let maxY = d3.max(data, d => d.forexBuying);
+            let range = (maxY - minY) * (3 / 2);
+
+            let yMin = minY - range;
+            let yMax = maxY + range;
+
             // Define scales
             let xScale = d3.scaleTime()
                 .domain(d3.extent(data, d => d.date))
                 .range([0, width - margin.left - margin.right]);
 
             let yScale = d3.scaleLinear()
-                .domain([0, d3.max(data, d => d.forexBuying)])
+                .domain([yMin, yMax])
                 .nice()
                 .range([height - margin.top - margin.bottom, 0]);
 
             // Define axes
             let xAxis = d3.axisBottom(xScale).tickFormat(d3.timeFormat("%Y-%m"));
-            let yAxis = d3.axisLeft(yScale);
+            let yAxis = d3.axisLeft(yScale).ticks(5).tickFormat(d3.format(".2s"));
 
             // Add grid lines
             svg.append("g")
@@ -91,7 +99,7 @@
             let line = d3.line()
                 .x(d => xScale(d.date))
                 .y(d => yScale(d.forexBuying))
-                .curve(d3.curveMonotoneX); // Smooth the line
+                .curve(d3.curveMonotoneX);
 
             // Add the line
             svg.append("path")
