@@ -1,12 +1,12 @@
 ﻿using Microsoft.EntityFrameworkCore;
 
-public class ExchangeRateContext : DbContext
+public class ApplicationDbContext : DbContext
 {
     // DbSet for the ExchangeRate entity
     public DbSet<ExchangeRate> ExchangeRates { get; set; }
 
     // Constructor that accepts DbContextOptions
-    public ExchangeRateContext(DbContextOptions<ExchangeRateContext> options) : base(options) { }
+    public ApplicationDbContext(DbContextOptions<ApplicationDbContext> options) : base(options) { }
 
     // Configure the model and relationships
     protected override void OnModelCreating(ModelBuilder modelBuilder)

@@ -6,9 +6,9 @@ using Microsoft.EntityFrameworkCore;
 public class ExchangeRatesController : ControllerBase
 {
     private readonly TcmbService _tcmbService;
-    private readonly ExchangeRateContext _context;
+    private readonly ApplicationDbContext _context;
 
-    public ExchangeRatesController(TcmbService tcmbService, ExchangeRateContext context)
+    public ExchangeRatesController(TcmbService tcmbService, ApplicationDbContext context)
     {
         _tcmbService = tcmbService;
         _context = context;

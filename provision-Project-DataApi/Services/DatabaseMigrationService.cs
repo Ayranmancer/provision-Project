@@ -26,7 +26,7 @@ public class DatabaseMigrationService
             try
             {
                 using var scope = _serviceProvider.CreateScope();
-                var dbContext = scope.ServiceProvider.GetRequiredService<ExchangeRateContext>();
+                var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
 
                 _logger.LogInformation("Applying database migrations...");
                 await dbContext.Database.MigrateAsync();
