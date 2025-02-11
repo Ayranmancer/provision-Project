@@ -31,5 +31,12 @@
     command:
       - sh -c "dotnet ef database update && dotnet run"
 
+  currencywebsite:
+    build: ../provision-Project-CurrencyWebsite
+    ports:
+      - "5004:80"
+    depends_on:
+      - api
+
 volumes:
   mysql_data:

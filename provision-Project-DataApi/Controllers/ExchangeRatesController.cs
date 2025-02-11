@@ -33,10 +33,21 @@ public class ExchangeRatesController : ControllerBase
         return Ok("Exchange rates fetched and saved successfully.");
     }
 
-    [HttpGet]
-    public async Task<IActionResult> GetExchangeRates()
+    [HttpGet("{currencyCode}")]
+    [Produces("application/json", "application/xml")] // Allow both JSON and XML
+    public async Task<IActionResult> GetExchangeRates(string currencyCode)
     {
-        var rates = await _context.ExchangeRates.ToListAsync();
-        return Ok(rates);
+        var rates = await _context.ExchangeRates
+            .Where(r => r.CurrencyCode == currencyCode)
+            .ToListAsync();
+
+        if (!rates.Any())
+        {
+            return NotFound(new { Message = $"No exchange rates found for currency: {currencyCode}" });
+        }
+
+        return Ok(rates); // ASP.NET Core will return XML if the client requests it
     }
+
+
 }

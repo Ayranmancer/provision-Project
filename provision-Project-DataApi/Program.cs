@@ -7,13 +7,30 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
         ServerVersion.AutoDetect(builder.Configuration.GetConnectionString("DefaultConnection"))));
 
 builder.Services.AddControllers();
+builder.Services.AddControllers()
+    .AddXmlSerializerFormatters(); // Enable XML output support
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
+
+// Enable CORS
+builder.Services.AddCors(options =>
+{
+    options.AddPolicy("AllowAll",
+        policy =>
+        {
+            policy.AllowAnyOrigin()
+                  .AllowAnyMethod()
+                  .AllowAnyHeader();
+        });
+});
+
 
 builder.Services.AddSingleton<DatabaseMigrationService>();
 builder.Services.AddHttpClient<TcmbService>();
 
 var app = builder.Build();
+
+app.UseCors("AllowAll"); // Apply CORS policy
 
 var migrationService = app.Services.GetRequiredService<DatabaseMigrationService>();
 await migrationService.MigrateDatabaseAsync();
