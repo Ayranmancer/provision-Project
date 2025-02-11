@@ -27,7 +27,8 @@ builder.Services.AddCors(options =>
 
 
 builder.Services.AddSingleton<DatabaseMigrationService>();
-builder.Services.AddHttpClient<TcmbService>();
+builder.Services.AddHttpClient<TcmbService>(); // Register HttpClient for TcmbService
+builder.Services.AddHostedService<TcmbService>(); // Register as background service
 
 var app = builder.Build();
 
