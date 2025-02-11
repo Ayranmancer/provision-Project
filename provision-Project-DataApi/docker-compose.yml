@@ -1,0 +1,35 @@
+﻿services:
+  db:
+    image: mysql:8.0
+    container_name: tcmb_db
+    restart: always
+    environment:
+      MYSQL_ROOT_PASSWORD: AyranGelistirme2002!
+      MYSQL_DATABASE: tcmb_exchange_rates
+    ports:
+      - "3307:3306"
+    volumes:
+      - mysql_data:/var/lib/mysql
+    healthcheck:
+      test: ["CMD", "mysqladmin", "ping", "-h", "localhost"]
+      interval: 10s
+      retries: 5
+      start_period: 10s
+      timeout : 5s
+
+  api:
+    build: .
+    container_name: tcmb_dataapi
+    restart: always
+    depends_on:
+      db:
+        condition: service_healthy
+    ports:
+      - "5000:80"
+    environment:
+      - ConnectionStrings__DefaultConnection=Server=db;Port=3306;Database=tcmb_exchange_rates;User=root;Password=AyranGelistirme2002!;
+    command:
+      - sh -c "dotnet ef database update && dotnet run"
+
+volumes:
+  mysql_data:
