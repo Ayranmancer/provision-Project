@@ -18,18 +18,28 @@ public class DatabaseMigrationService
 
     public async Task MigrateDatabaseAsync()
     {
-        try
-        {
-            using var scope = _serviceProvider.CreateScope();
-            var dbContext = scope.ServiceProvider.GetRequiredService<ExchangeRateContext>();
+        int maxRetries = 5;
+        int delaySeconds = 10;
 
-            _logger.LogInformation("Applying database migrations...");
-            await dbContext.Database.MigrateAsync();
-            _logger.LogInformation("Database migration completed successfully.");
-        }
-        catch (Exception ex)
+        for (int retry = 0; retry < maxRetries; retry++)
         {
-            _logger.LogError(ex, "Error while applying database migrations.");
+            try
+            {
+                using var scope = _serviceProvider.CreateScope();
+                var dbContext = scope.ServiceProvider.GetRequiredService<ExchangeRateContext>();
+
+                _logger.LogInformation("Applying database migrations...");
+                await dbContext.Database.MigrateAsync();
+                _logger.LogInformation("Database migration completed successfully.");
+                return;
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, $"Database migration failed. Retry {retry + 1}/{maxRetries} in {delaySeconds} seconds...");
+                await Task.Delay(delaySeconds * 1000);
+            }
         }
+
+        _logger.LogError("Database migration failed after multiple attempts. Exiting.");
     }
 }
