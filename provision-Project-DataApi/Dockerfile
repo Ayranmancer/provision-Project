@@ -16,6 +16,7 @@ ARG BUILD_CONFIGURATION=Release
 WORKDIR /src
 
 COPY ["./provision-Project-DataApi.csproj", "provision-Project-DataApi/"]
+COPY ["./provision-Project.Data.csproj", "provision-Project-Data/"]
 RUN dotnet restore "./provision-Project-DataApi/provision-Project-DataApi.csproj"
 
 WORKDIR "/src/provision-Project-DataApi"
