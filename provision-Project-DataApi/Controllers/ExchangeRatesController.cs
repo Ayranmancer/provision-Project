@@ -1,7 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.EntityFrameworkCore;
-using provision_Project.Data;
-using provision_Project.Data.Models;
 
 [ApiController]
 [Route("api/[controller]")]
@@ -33,5 +31,17 @@ public class ExchangeRatesController : ControllerBase
         }
 
         return Ok("Exchange rates fetched and saved successfully.");
+    }
+
+    [HttpGet("{currency}")]
+    public async Task<IActionResult> GetExchangeRates(string currency)
+    {
+        var exchangeRates = await _context.ExchangeRates
+            .Where(e => e.CurrencyCode == currency)
+            .ToListAsync();
+
+        if (!exchangeRates.Any()) return NotFound();
+
+        return Ok(exchangeRates);
     }
 }

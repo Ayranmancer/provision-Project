@@ -10,6 +10,8 @@ builder.Services.AddControllers();
 builder.Services.AddEndpointsApiExplorer();
 builder.Services.AddSwaggerGen();
 
+builder.Services.AddHttpClient<ExchangeRateService>();
+
 var app = builder.Build();
 
 //if (app.Environment.IsDevelopment())

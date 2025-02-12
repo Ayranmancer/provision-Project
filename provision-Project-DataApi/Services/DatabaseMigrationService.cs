@@ -4,8 +4,6 @@ using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Logging;
 using System;
 using System.Threading.Tasks;
-using provision_Project.Data;
-using provision_Project.Data.Models;
 
 public class DatabaseMigrationService
 {

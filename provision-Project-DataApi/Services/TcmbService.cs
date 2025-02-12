@@ -1,7 +1,5 @@
 ﻿using System.Xml.Linq;
 using System.Net.Http;
-using provision_Project.Data;
-using provision_Project.Data.Models;
 
 public class TcmbService
 {
