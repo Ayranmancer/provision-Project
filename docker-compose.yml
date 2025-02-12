@@ -41,7 +41,6 @@
       - "5002:80"  # HTTP
       - "5003:443"  # HTTPS
     environment:
-      - ConnectionStrings__DefaultConnection=Server=db;Port=3306;Database=tcmb_exchange_rates;User=root;Password=AyranGelistirme2002!;
       - ASPNETCORE_URLS=http://+:5002;https://+:5003
     depends_on:
       db:
