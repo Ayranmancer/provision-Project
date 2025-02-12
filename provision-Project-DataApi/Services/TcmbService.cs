@@ -44,19 +44,10 @@ public class TcmbService : BackgroundService
         }
     }
 
-    public async Task<List<ExchangeRate>> GetExchangeRatesForDate(DateTime date)
+    public async Task<List<ExchangeRate>> GetExchangeRatesInitial(DateTime date)
     {
         var cacheKey = $"{CACHE_KEY_PREFIX}{date:yyyyMMdd}";
         var db = _redis.GetDatabase();
-
-        var cachedValue = await db.StringGetAsync(cacheKey);
-        if (cachedValue.HasValue)
-        {
-            Console.WriteLine($"Cache HIT for date: {date:yyyy-MM-dd}");
-            return JsonSerializer.Deserialize<List<ExchangeRate>>(cachedValue);
-        }
-
-        Console.WriteLine($"Cache MISS for date: {date:yyyy-MM-dd}");
 
         using var scope = _scopeFactory.CreateScope();
         var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
@@ -68,7 +59,6 @@ public class TcmbService : BackgroundService
         if (rates.Any())
         {
             Console.WriteLine($"Found rates in database for date: {date:yyyy-MM-dd}");
-            await CacheExchangeRates(rates, date);
             return rates;
         }
 
@@ -76,20 +66,53 @@ public class TcmbService : BackgroundService
         return await GetExchangeRatesAsync(date);
     }
 
-    private async Task CacheExchangeRates(List<ExchangeRate> rates, DateTime date)
+    public async Task<List<ExchangeRate>> GetExchangeRatesForDate(DateTime date, string currencyCode)
+    {
+        var cacheKey = $"{CACHE_KEY_PREFIX}{date:yyyyMMdd}_{currencyCode}";
+        var db = _redis.GetDatabase();
+
+        var cachedValue = await db.StringGetAsync(cacheKey);
+        if (cachedValue.HasValue)
+        {
+            Console.WriteLine($"Cache HIT for date: {date:yyyy-MM-dd} and currency: {currencyCode}");
+            return JsonSerializer.Deserialize<List<ExchangeRate>>(cachedValue);
+        }
+
+        Console.WriteLine($"Cache MISS for date: {date:yyyy-MM-dd} and currency: {currencyCode}");
+
+        using var scope = _scopeFactory.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+
+        var rates = await dbContext.ExchangeRates
+            .Where(r => r.Date.Date == date.Date && r.CurrencyCode == currencyCode)
+            .ToListAsync();
+
+        if (rates.Any())
+        {
+            Console.WriteLine($"Found rates in database for date: {date:yyyy-MM-dd} and currency: {currencyCode}");
+            await CacheExchangeRates(rates, date, currencyCode);
+            return rates;
+        }
+
+        Console.WriteLine($"Fetching rates from TCMB for date: {date:yyyy-MM-dd}");
+        return await GetExchangeRatesAsync(date);
+    }
+
+    private async Task CacheExchangeRates(List<ExchangeRate> rates, DateTime date, string currencyCode)
     {
         if (rates == null || !rates.Any()) return;
 
-        var cacheKey = $"{CACHE_KEY_PREFIX}{date:yyyyMMdd}";
+        var cacheKey = $"{CACHE_KEY_PREFIX}{date:yyyyMMdd}_{currencyCode}";
         var db = _redis.GetDatabase();
 
         if (!await db.KeyExistsAsync(cacheKey))
         {
             var serializedRates = JsonSerializer.Serialize(rates);
             await db.StringSetAsync(cacheKey, serializedRates, TimeSpan.FromHours(CACHE_HOURS));
-            Console.WriteLine($"Cached {rates.Count} rates for date: {date:yyyy-MM-dd}");
+            Console.WriteLine($"Cached {rates.Count} rates for date: {date:yyyy-MM-dd} and currency: {currencyCode}");
         }
     }
+
 
     private async Task<List<ExchangeRate>> GetExchangeRatesAsync(DateTime date)
     {

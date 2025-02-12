@@ -29,7 +29,7 @@ public class DataApiController : ControllerBase
             var fetchedDates = new List<DateTime>();
             for (var date = startDate; date <= endDate; date = date.AddDays(1))
             {
-                var rates = await _tcmbService.GetExchangeRatesForDate(date);
+                var rates = await _tcmbService.GetExchangeRatesInitial(date);
                 if (rates != null && rates.Any())
                 {
                     fetchedDates.Add(date);
@@ -72,7 +72,7 @@ public class DataApiController : ControllerBase
                     continue; // Skip weekends and holidays
                 }
 
-                var rates = await _tcmbService.GetExchangeRatesForDate(date);
+                var rates = await _tcmbService.GetExchangeRatesForDate(date, currencyCode);
                 if (rates != null)
                 {
                     exchangeRates.AddRange(rates.Where(r => r.CurrencyCode == currencyCode));
