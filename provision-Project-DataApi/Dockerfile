@@ -13,10 +13,11 @@ EXPOSE 3307
 # This stage is used to build the service project
 FROM mcr.microsoft.com/dotnet/sdk:9.0 AS build
 ARG BUILD_CONFIGURATION=Release
+COPY ["../provision-Project.Data/provision-Project.Data.csproj", "provision-Project-Data/"]
 WORKDIR /src
 
 COPY ["./provision-Project-DataApi.csproj", "provision-Project-DataApi/"]
-COPY ["./provision-Project.Data.csproj", "provision-Project-Data/"]
+
 RUN dotnet restore "./provision-Project-DataApi/provision-Project-DataApi.csproj"
 
 WORKDIR "/src/provision-Project-DataApi"
