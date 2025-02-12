@@ -45,9 +45,6 @@ namespace provision_Project_DataApi.Migrations
                     b.Property<decimal>("ForexBuying")
                         .HasColumnType("decimal(18, 4)");
 
-                    b.Property<decimal>("ForexSelling")
-                        .HasColumnType("decimal(18, 4)");
-
                     b.HasKey("Id");
 
                     b.HasIndex("CurrencyCode", "Date")

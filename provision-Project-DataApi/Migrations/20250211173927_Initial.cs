@@ -26,7 +26,6 @@ namespace provision_Project_DataApi.Migrations
                     CurrencyName = table.Column<string>(type: "varchar(100)", maxLength: 100, nullable: false)
                         .Annotation("MySql:CharSet", "utf8mb4"),
                     ForexBuying = table.Column<decimal>(type: "decimal(18,4)", nullable: false),
-                    ForexSelling = table.Column<decimal>(type: "decimal(18,4)", nullable: false),
                     Date = table.Column<DateTime>(type: "datetime(6)", nullable: false)
                 },
                 constraints: table =>
