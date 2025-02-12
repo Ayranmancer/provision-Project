@@ -6,9 +6,9 @@ using System.Threading.Tasks;
 [ApiController]
 public class ExchangeRatesController : ControllerBase
 {
-    private readonly ExchangeRateService _exchangeRateService;
+    private readonly TcmbService _exchangeRateService;
 
-    public ExchangeRatesController(ExchangeRateService exchangeRateService)
+    public ExchangeRatesController(TcmbService exchangeRateService)
     {
         _exchangeRateService = exchangeRateService;
     }

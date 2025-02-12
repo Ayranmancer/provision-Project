@@ -8,7 +8,7 @@
         }
 
         $.ajax({
-            url: `http://localhost:5000/api/exchangeRates/${currency}`,
+            url: `http://localhost:5002/api/exchangeRates/${currency}`,
             method: "GET",
             headers: { "Accept": "application/json" }, // Request JSON explicitly
             dataType: "json", // Expect JSON response
