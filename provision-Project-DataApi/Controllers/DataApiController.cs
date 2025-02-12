@@ -17,37 +17,102 @@ public class DataApiController : ControllerBase
     [HttpGet("fetch")]
     public async Task<IActionResult> FetchExchangeRates()
     {
-        var endDate = DateTime.Today;
-        var startDate = endDate.AddMonths(-2);
-
-        for (var date = startDate; date <= endDate; date = date.AddDays(1))
+        try
         {
-            var rates = await _tcmbService.GetExchangeRatesAsync(date);
-            if (rates != null)
-            {
-                _context.ExchangeRates.AddRange(rates);
-                await _context.SaveChangesAsync();
-            }
-        }
+            var endDate = DateTime.Today;
+            var startDate = endDate.AddMonths(-2);
 
-        return Ok("Exchange rates fetched and saved successfully.");
+            var fetchedDates = new List<DateTime>();
+            for (var date = startDate; date <= endDate; date = date.AddDays(1))
+            {
+                var rates = await _tcmbService.GetExchangeRatesForDate(date);
+                if (rates != null && rates.Any())
+                {
+                    fetchedDates.Add(date);
+                }
+            }
+
+            return Ok(new
+            {
+                Message = "Exchange rates fetched and saved successfully.",
+                FetchedDates = fetchedDates
+            });
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { Message = "An error occurred while fetching exchange rates.", Error = ex.Message });
+        }
     }
 
     [HttpGet("{currencyCode}")]
-    [Produces("application/json", "application/xml")] // Allow both JSON and XML
-    public async Task<IActionResult> GetExchangeRates(string currencyCode)
+    [Produces("application/json", "application/xml")]
+    public async Task<IActionResult> GetExchangeRates(string currencyCode, [FromQuery] DateTime? date = null)
     {
-        Console.WriteLine($"[DataApi] Received request for currency: {currencyCode}");
-
-        var rates = await _context.ExchangeRates
-            .Where(r => r.CurrencyCode.ToUpper() == currencyCode.ToUpper().Trim())
-            .ToListAsync();
-
-        if (!rates.Any())
+        try
         {
-            return NotFound(new { Message = $"No exchange rates found for currency: {currencyCode}" });
-        }
+            Console.WriteLine($"[DataApi] Received request for currency: {currencyCode}, date: {date}");
 
-        return Ok(rates); // ASP.NET Core will return XML if the client requests it
+            if (date.HasValue)
+            {
+                // Get rates for specific date
+                var rates = await _tcmbService.GetExchangeRatesForDate(date.Value);
+                var filteredRates = rates?
+                    .Where(r => r.CurrencyCode.ToUpper() == currencyCode.ToUpper().Trim())
+                    .ToList();
+
+                if (filteredRates == null || !filteredRates.Any())
+                {
+                    return NotFound(new { Message = $"No exchange rates found for currency: {currencyCode} on date: {date.Value:yyyy-MM-dd}" });
+                }
+
+                return Ok(filteredRates);
+            }
+            else
+            {
+                // Get all rates for the currency
+                var rates = await _context.ExchangeRates
+                    .Where(r => r.CurrencyCode.ToUpper() == currencyCode.ToUpper().Trim())
+                    .OrderByDescending(r => r.Date)
+                    .ToListAsync();
+
+                if (!rates.Any())
+                {
+                    return NotFound(new { Message = $"No exchange rates found for currency: {currencyCode}" });
+                }
+
+                return Ok(rates);
+            }
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { Message = "An error occurred while retrieving exchange rates.", Error = ex.Message });
+        }
+    }
+
+    [HttpGet("latest/{currencyCode}")]
+    [Produces("application/json", "application/xml")]
+    public async Task<IActionResult> GetLatestExchangeRate(string currencyCode)
+    {
+        try
+        {
+            Console.WriteLine($"[DataApi] Received request for latest {currencyCode} rate");
+
+            var today = DateTime.Today;
+            var rates = await _tcmbService.GetExchangeRatesForDate(today);
+
+            var latestRate = rates?
+                .FirstOrDefault(r => r.CurrencyCode.ToUpper() == currencyCode.ToUpper().Trim());
+
+            if (latestRate == null)
+            {
+                return NotFound(new { Message = $"No latest exchange rate found for currency: {currencyCode}" });
+            }
+
+            return Ok(latestRate);
+        }
+        catch (Exception ex)
+        {
+            return StatusCode(500, new { Message = "An error occurred while retrieving the latest exchange rate.", Error = ex.Message });
+        }
     }
 }

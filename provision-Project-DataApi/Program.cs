@@ -1,4 +1,5 @@
 using Microsoft.EntityFrameworkCore;
+using StackExchange.Redis;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -35,6 +36,8 @@ builder.Services.AddCors(options =>
 builder.Services.AddSingleton<DatabaseMigrationService>();
 builder.Services.AddHttpClient<TcmbService>(); // Register HttpClient for TcmbService
 builder.Services.AddHostedService<TcmbService>(); // Register as background service
+builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
+    ConnectionMultiplexer.Connect("redis:6379"));
 
 var app = builder.Build();
 

@@ -2,22 +2,31 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
+using System.Text.Json;
 using System.Threading;
 using System.Threading.Tasks;
 using System.Xml.Linq;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Hosting;
+using StackExchange.Redis;
 
 public class TcmbService : BackgroundService
 {
     private readonly IServiceScopeFactory _scopeFactory;
     private readonly HttpClient _httpClient;
+    private readonly IConnectionMultiplexer _redis;
+    private const string CACHE_KEY_PREFIX = "exchange_rate:";
+    private const int CACHE_HOURS = 24;
 
-    public TcmbService(IServiceScopeFactory scopeFactory, HttpClient httpClient)
+    public TcmbService(
+        IServiceScopeFactory scopeFactory,
+        HttpClient httpClient,
+        IConnectionMultiplexer redis)
     {
         _scopeFactory = scopeFactory;
         _httpClient = httpClient;
+        _redis = redis;
     }
 
     protected override async Task ExecuteAsync(CancellationToken stoppingToken)
@@ -25,31 +34,77 @@ public class TcmbService : BackgroundService
         using (var scope = _scopeFactory.CreateScope())
         {
             var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
-
-            // Step 1: Initial Data Fetch on Startup
             await InitializeDatabaseIfEmpty(dbContext);
 
-            // Step 2: Start Daily Update Loop
             while (!stoppingToken.IsCancellationRequested)
             {
                 await FetchAndUpdateExchangeRates(dbContext);
-                await Task.Delay(TimeSpan.FromHours(24), stoppingToken); // Run every 24 hours
+                await Task.Delay(TimeSpan.FromHours(24), stoppingToken);
             }
         }
     }
 
-    public async Task<List<ExchangeRate>> GetExchangeRatesAsync(DateTime date)
+    public async Task<List<ExchangeRate>> GetExchangeRatesForDate(DateTime date)
+    {
+        var cacheKey = $"{CACHE_KEY_PREFIX}{date:yyyyMMdd}";
+        var db = _redis.GetDatabase();
+
+        var cachedValue = await db.StringGetAsync(cacheKey);
+        if (cachedValue.HasValue)
+        {
+            Console.WriteLine($"Cache HIT for date: {date:yyyy-MM-dd}");
+            return JsonSerializer.Deserialize<List<ExchangeRate>>(cachedValue);
+        }
+
+        Console.WriteLine($"Cache MISS for date: {date:yyyy-MM-dd}");
+
+        using var scope = _scopeFactory.CreateScope();
+        var dbContext = scope.ServiceProvider.GetRequiredService<ApplicationDbContext>();
+
+        var rates = await dbContext.ExchangeRates
+            .Where(r => r.Date.Date == date.Date)
+            .ToListAsync();
+
+        if (rates.Any())
+        {
+            Console.WriteLine($"Found rates in database for date: {date:yyyy-MM-dd}");
+            await CacheExchangeRates(rates, date);
+            return rates;
+        }
+
+        Console.WriteLine($"Fetching rates from TCMB for date: {date:yyyy-MM-dd}");
+        return await GetExchangeRatesAsync(date);
+    }
+
+    private async Task CacheExchangeRates(List<ExchangeRate> rates, DateTime date)
+    {
+        if (rates == null || !rates.Any()) return;
+
+        var cacheKey = $"{CACHE_KEY_PREFIX}{date:yyyyMMdd}";
+        var db = _redis.GetDatabase();
+
+        if (!await db.KeyExistsAsync(cacheKey))
+        {
+            var serializedRates = JsonSerializer.Serialize(rates);
+            await db.StringSetAsync(cacheKey, serializedRates, TimeSpan.FromHours(CACHE_HOURS));
+            Console.WriteLine($"Cached {rates.Count} rates for date: {date:yyyy-MM-dd}");
+        }
+    }
+
+    private async Task<List<ExchangeRate>> GetExchangeRatesAsync(DateTime date)
     {
         var url = $"https://www.tcmb.gov.tr/kurlar/{date:yyyyMM}/{date:ddMMyyyy}.xml";
         var response = await _httpClient.GetAsync(url);
-        Console.WriteLine($"Fetching exchange rates for {date:dd/MM/yyyy}...");
 
         if (!response.IsSuccessStatusCode)
+        {
+            Console.WriteLine($"Failed to fetch rates from TCMB for date: {date:yyyy-MM-dd}");
             return null;
+        }
 
         var xml = await response.Content.ReadAsStringAsync();
         var doc = XDocument.Parse(xml);
-        Console.WriteLine($"Exchange rates fetched for {date:dd/MM/yyyy}.");
+        Console.WriteLine($"Successfully fetched rates from TCMB for date: {date:yyyy-MM-dd}");
 
         var rates = doc.Descendants("Currency")
             .Select(x => new ExchangeRate
@@ -60,27 +115,32 @@ public class TcmbService : BackgroundService
                 Date = date
             }).ToList();
 
+        if (rates.Any())
+        {
+            await CacheExchangeRates(rates, date);
+        }
+
         return rates;
     }
 
     private async Task InitializeDatabaseIfEmpty(ApplicationDbContext dbContext)
     {
-        if (!await dbContext.ExchangeRates.AnyAsync()) // Check if database is empty
+        if (!await dbContext.ExchangeRates.AnyAsync())
         {
-            Console.WriteLine("No exchange rate data found. Fetching initial data...");
+            Console.WriteLine("Initializing database with historical data");
             var endDate = DateTime.Today;
             var startDate = endDate.AddMonths(-2);
 
             for (var date = startDate; date <= endDate; date = date.AddDays(1))
             {
                 var rates = await GetExchangeRatesAsync(date);
-                if (rates != null)
+                if (rates != null && rates.Any())
                 {
                     dbContext.ExchangeRates.AddRange(rates);
                     await dbContext.SaveChangesAsync();
                 }
             }
-            Console.WriteLine("Initial exchange rate data fetched successfully.");
+            Console.WriteLine("Database initialization completed");
         }
     }
 
@@ -90,7 +150,7 @@ public class TcmbService : BackgroundService
 
         if (IsWeekend(today) || IsHoliday(today))
         {
-            Console.WriteLine($"Skipping update for {today}: Weekend or Holiday.");
+            Console.WriteLine($"Skipping update for {today:yyyy-MM-dd}: Weekend or Holiday");
             return;
         }
 
@@ -98,11 +158,11 @@ public class TcmbService : BackgroundService
         if (!existingRate)
         {
             var rates = await GetExchangeRatesAsync(today);
-            if (rates != null)
+            if (rates != null && rates.Any())
             {
                 dbContext.ExchangeRates.AddRange(rates);
                 await dbContext.SaveChangesAsync();
-                Console.WriteLine($"Exchange rates updated for {today}.");
+                Console.WriteLine($"Updated rates for {today:yyyy-MM-dd}");
             }
         }
     }
@@ -114,13 +174,13 @@ public class TcmbService : BackgroundService
     {
         var holidays = new List<DateTime>
         {
-            new DateTime(date.Year, 1, 1),  // New Year’s Day
-            new DateTime(date.Year, 4, 23), // National Sovereignty and Children's Day (Turkey)
-            new DateTime(date.Year, 5, 1),  // Labor Day
-            new DateTime(date.Year, 5, 19), // Atatürk Memorial Day
-            new DateTime(date.Year, 7, 15), // Democracy and National Unity Day
-            new DateTime(date.Year, 8, 30), // Victory Day
-            new DateTime(date.Year, 10, 29) // Republic Day
+            new DateTime(date.Year, 1, 1),
+            new DateTime(date.Year, 4, 23),
+            new DateTime(date.Year, 5, 1),
+            new DateTime(date.Year, 5, 19),
+            new DateTime(date.Year, 7, 15),
+            new DateTime(date.Year, 8, 30),
+            new DateTime(date.Year, 10, 29)
         };
 
         return holidays.Contains(date);

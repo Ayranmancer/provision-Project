@@ -50,6 +50,7 @@
 
   currencywebsite:
     build: ./provision-Project-CurrencyWebsite
+    container_name: tcmb_currencywebsite
     ports:
       - "5004:80" # HTTP
     depends_on:
@@ -57,6 +58,15 @@
       - businessapi
     networks:
       - tcmb_network
+  redis:
+    container_name: tcmb_redis
+    image: redis:latest
+    ports:
+      - "6379:6379"
+    networks:
+      - tcmb_network
+    depends_on:
+        - db
 
 volumes:
   mysql_data:
