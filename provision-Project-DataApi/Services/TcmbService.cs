@@ -115,11 +115,6 @@ public class TcmbService : BackgroundService
                 Date = date
             }).ToList();
 
-        if (rates.Any())
-        {
-            await CacheExchangeRates(rates, date);
-        }
-
         return rates;
     }
 
@@ -167,10 +162,10 @@ public class TcmbService : BackgroundService
         }
     }
 
-    private bool IsWeekend(DateTime date) =>
+    public bool IsWeekend(DateTime date) =>
         date.DayOfWeek == DayOfWeek.Saturday || date.DayOfWeek == DayOfWeek.Sunday;
 
-    private bool IsHoliday(DateTime date)
+    public bool IsHoliday(DateTime date)
     {
         var holidays = new List<DateTime>
         {
