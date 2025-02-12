@@ -1,4 +1,5 @@
 ﻿using Microsoft.EntityFrameworkCore;
+using Microsoft.Extensions.Options;
 
 public class ApplicationDbContext : DbContext
 {
@@ -39,4 +40,10 @@ public class ApplicationDbContext : DbContext
             .Property(e => e.Date)
             .IsRequired();
     }
+    protected override void OnConfiguring(DbContextOptionsBuilder optionsBuilder)
+    {
+        optionsBuilder.UseMySql("Server=db;Port=3306;Database=tcmb_exchange_rates;User=root;Password=AyranGelistirme2002!",
+            new MySqlServerVersion(new Version(8, 0, 21)));
+    }
+
 }
