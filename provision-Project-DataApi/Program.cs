@@ -9,7 +9,7 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 builder.WebHost.ConfigureKestrel(options =>
 {
     options.ListenAnyIP(80);
-    options.ListenAnyIP(443);
+    //options.ListenAnyIP(443);
 });
 
 builder.Services.AddControllers();

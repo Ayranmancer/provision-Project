@@ -5,6 +5,9 @@ FROM mcr.microsoft.com/dotnet/aspnet:9.0 AS base
 WORKDIR /app
 EXPOSE 80
 EXPOSE 443
+EXPOSE 5002
+EXPOSE 5003
+ENV ASPNETCORE_URLS=http://+:5002
 
 
 # This stage is used to build the service project

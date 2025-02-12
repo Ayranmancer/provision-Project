@@ -2,13 +2,13 @@
 using Microsoft.EntityFrameworkCore;
 
 [ApiController]
-[Route("api/[controller]")]
-public class ExchangeRatesController : ControllerBase
+[Route("api/DataApi")]
+public class DataApiController : ControllerBase
 {
     private readonly TcmbService _tcmbService;
     private readonly ApplicationDbContext _context;
 
-    public ExchangeRatesController(TcmbService tcmbService, ApplicationDbContext context)
+    public DataApiController(TcmbService tcmbService, ApplicationDbContext context)
     {
         _tcmbService = tcmbService;
         _context = context;

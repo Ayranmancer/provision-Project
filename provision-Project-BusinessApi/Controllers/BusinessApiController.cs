@@ -2,21 +2,21 @@
 using System.Collections.Generic;
 using System.Threading.Tasks;
 
-[Route("api/exchangeRates")]
 [ApiController]
+[Route("api/BusinessApi")]
 public class ExchangeRatesController : ControllerBase
 {
-    private readonly TcmbService _exchangeRateService;
+    private readonly ExchangeRateService _exchangeRateService;
 
-    public ExchangeRatesController(TcmbService exchangeRateService)
+    public ExchangeRatesController(ExchangeRateService exchangeRateService)
     {
         _exchangeRateService = exchangeRateService;
     }
 
-    [HttpGet("{currency}")]
-    public async Task<IActionResult> GetExchangeRates(string currency)
+    [HttpGet("{currencyCode}")]
+    public async Task<IActionResult> GetExchangeRates(string currencyCode)
     {
-        var exchangeRates = await _exchangeRateService.GetExchangeRates(currency);
+        var exchangeRates = await _exchangeRateService.GetExchangeRates(currencyCode);
 
         if (exchangeRates == null || exchangeRates.Count == 0)
         {

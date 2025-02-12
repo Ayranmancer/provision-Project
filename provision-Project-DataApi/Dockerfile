@@ -8,6 +8,9 @@ EXPOSE 80
 EXPOSE 443
 EXPOSE 3306
 EXPOSE 3307
+EXPOSE 5000
+EXPOSE 5001
+ENV ASPNETCORE_URLS=http://+:5000
 
 
 # This stage is used to build the service project
