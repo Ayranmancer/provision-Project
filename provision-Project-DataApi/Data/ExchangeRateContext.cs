@@ -33,10 +33,6 @@ public class ApplicationDbContext : DbContext
             .HasColumnType("decimal(18, 4)"); // Configure precision and scale for ForexBuying
 
         modelBuilder.Entity<ExchangeRate>()
-            .Property(e => e.ForexSelling)
-            .HasColumnType("decimal(18, 4)"); // Configure precision and scale for ForexSelling
-
-        modelBuilder.Entity<ExchangeRate>()
             .Property(e => e.Date)
             .IsRequired();
     }
