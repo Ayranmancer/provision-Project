@@ -16,6 +16,8 @@
       retries: 5
       start_period: 10s
       timeout : 5s
+    networks:
+      - tcmb_network
 
   dataapi:
     build: ./provision-Project-DataApi
@@ -31,6 +33,8 @@
       - ConnectionStrings__DefaultConnection=Server=db;Port=3306;Database=tcmb_exchange_rates;User=root;Password=AyranGelistirme2002!;
     command:
       - sh -c "dotnet ef database update && dotnet run"
+    networks:
+      - tcmb_network
 
   businessapi:
     build: ./provision-Project-BusinessApi
@@ -40,8 +44,9 @@
       - "5002:80"  # HTTP
       #- "5003:443"  # HTTPS
     depends_on:
-      db:
-        condition: service_healthy
+        - dataapi
+    networks:
+      - tcmb_network
 
   currencywebsite:
     build: ./provision-Project-CurrencyWebsite
@@ -50,6 +55,12 @@
     depends_on:
       - dataapi
       - businessapi
+    networks:
+      - tcmb_network
 
 volumes:
   mysql_data:
+  
+networks:
+  tcmb_network:
+    driver: bridge 

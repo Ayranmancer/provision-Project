@@ -9,7 +9,7 @@
 
     public async Task<List<ExchangeRate>> GetExchangeRates(string currencyCode)
     {
-        var response = await _httpClient.GetAsync($"http://localhost:5000/api/DataApi/{currencyCode}");
+        var response = await _httpClient.GetAsync($"http://dataapi:80/api/DataApi/{currencyCode}");
 
         if (!response.IsSuccessStatusCode) return null;
 

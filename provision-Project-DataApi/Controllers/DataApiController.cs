@@ -37,8 +37,10 @@ public class DataApiController : ControllerBase
     [Produces("application/json", "application/xml")] // Allow both JSON and XML
     public async Task<IActionResult> GetExchangeRates(string currencyCode)
     {
+        Console.WriteLine($"[DataApi] Received request for currency: {currencyCode}");
+
         var rates = await _context.ExchangeRates
-            .Where(r => r.CurrencyCode == currencyCode)
+            .Where(r => r.CurrencyCode.ToUpper() == currencyCode.ToUpper().Trim())
             .ToListAsync();
 
         if (!rates.Any())
@@ -48,6 +50,4 @@ public class DataApiController : ControllerBase
 
         return Ok(rates); // ASP.NET Core will return XML if the client requests it
     }
-
-
 }
