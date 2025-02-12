@@ -46,42 +46,22 @@ public class DataApiController : ControllerBase
 
     [HttpGet("{currencyCode}")]
     [Produces("application/json", "application/xml")]
-    public async Task<IActionResult> GetExchangeRates(string currencyCode, [FromQuery] DateTime? date = null)
+    public async Task<IActionResult> GetExchangeRates(string currencyCode)
     {
         try
         {
-            Console.WriteLine($"[DataApi] Received request for currency: {currencyCode}, date: {date}");
+            // Get all rates for the currency
+            var rates = await _context.ExchangeRates
+                .Where(r => r.CurrencyCode.ToUpper() == currencyCode.ToUpper().Trim())
+                .OrderByDescending(r => r.Date)
+                .ToListAsync();
 
-            if (date.HasValue)
+            if (!rates.Any())
             {
-                // Get rates for specific date
-                var rates = await _tcmbService.GetExchangeRatesForDate(date.Value);
-                var filteredRates = rates?
-                    .Where(r => r.CurrencyCode.ToUpper() == currencyCode.ToUpper().Trim())
-                    .ToList();
-
-                if (filteredRates == null || !filteredRates.Any())
-                {
-                    return NotFound(new { Message = $"No exchange rates found for currency: {currencyCode} on date: {date.Value:yyyy-MM-dd}" });
-                }
-
-                return Ok(filteredRates);
+                return NotFound(new { Message = $"No exchange rates found for currency: {currencyCode}" });
             }
-            else
-            {
-                // Get all rates for the currency
-                var rates = await _context.ExchangeRates
-                    .Where(r => r.CurrencyCode.ToUpper() == currencyCode.ToUpper().Trim())
-                    .OrderByDescending(r => r.Date)
-                    .ToListAsync();
 
-                if (!rates.Any())
-                {
-                    return NotFound(new { Message = $"No exchange rates found for currency: {currencyCode}" });
-                }
-
-                return Ok(rates);
-            }
+            return Ok(rates);
         }
         catch (Exception ex)
         {
