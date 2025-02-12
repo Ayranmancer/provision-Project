@@ -88,31 +88,4 @@ public class DataApiController : ControllerBase
             return StatusCode(500, new { Message = "An error occurred while retrieving exchange rates.", Error = ex.Message });
         }
     }
-
-    [HttpGet("latest/{currencyCode}")]
-    [Produces("application/json", "application/xml")]
-    public async Task<IActionResult> GetLatestExchangeRate(string currencyCode)
-    {
-        try
-        {
-            Console.WriteLine($"[DataApi] Received request for latest {currencyCode} rate");
-
-            var today = DateTime.Today;
-            var rates = await _tcmbService.GetExchangeRatesForDate(today);
-
-            var latestRate = rates?
-                .FirstOrDefault(r => r.CurrencyCode.ToUpper() == currencyCode.ToUpper().Trim());
-
-            if (latestRate == null)
-            {
-                return NotFound(new { Message = $"No latest exchange rate found for currency: {currencyCode}" });
-            }
-
-            return Ok(latestRate);
-        }
-        catch (Exception ex)
-        {
-            return StatusCode(500, new { Message = "An error occurred while retrieving the latest exchange rate.", Error = ex.Message });
-        }
-    }
 }
