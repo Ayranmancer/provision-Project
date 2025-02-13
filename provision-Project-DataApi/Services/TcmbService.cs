@@ -56,26 +56,25 @@ public class TcmbService : BackgroundService
             }
         }
     }
-
-
     private DateTime GetNextRunTime(DateTime currentTime)
     {
-        var nextRunTime = currentTime.Date.AddHours(15).AddMinutes(35); // Today at 15:30, give 5 minute window
+        var nextRunTime = currentTime.Date.AddHours(12).AddMinutes(35); // Today at 15:35 GMT+3, 12:35 GMT
 
-        // If it's already past 15:30, schedule for the next valid day
-        if (currentTime > nextRunTime || IsWeekend(currentTime) || IsHoliday(currentTime))
+        // If it's already past 15:35, move to the next day
+        if (currentTime > nextRunTime)
         {
-            do
-            {
-                nextRunTime = nextRunTime.AddDays(1);
-            }
-            while (IsWeekend(nextRunTime) || IsHoliday(nextRunTime));
+            nextRunTime = nextRunTime.AddDays(1);
+        }
 
-            nextRunTime = nextRunTime.Date.AddHours(15).AddMinutes(30);
+        // Keep skipping weekends and holidays
+        while (IsWeekend(nextRunTime) || IsHoliday(nextRunTime))
+        {
+            nextRunTime = nextRunTime.AddDays(1);
         }
 
         return nextRunTime;
     }
+
 
     public async Task<List<ExchangeRate>> GetExchangeRatesForCurrencyAsync(DateTime date, string currencyCode)
     {
