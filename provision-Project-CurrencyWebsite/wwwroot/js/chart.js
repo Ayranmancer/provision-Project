@@ -52,12 +52,9 @@
             // Sort data by date
             data.sort((a, b) => a.date - b.date);
 
-            // Calculate dynamic Y-axis range with smaller margins
+            // Get exact min and max values for y-axis
             let minY = d3.min(data, d => d.forexBuying);
             let maxY = d3.max(data, d => d.forexBuying);
-
-            let yMin = minY - (minY * 0.01); // 10% below minimum
-            let yMax = maxY + (maxY * 0.01); // 10% above maximum
 
             // Define scales
             let xScale = d3.scaleTime()
@@ -65,7 +62,7 @@
                 .range([0, width - margin.left - margin.right]);
 
             let yScale = d3.scaleLinear()
-                .domain([yMin, yMax])
+                .domain([minY, maxY]) // Use exact min and max
                 .nice()
                 .range([height - margin.top - margin.bottom, 0]);
 
@@ -73,18 +70,8 @@
             let xAxis = d3.axisBottom(xScale).tickFormat(d3.timeFormat("%Y-%m"));
 
             let yAxis = d3.axisLeft(yScale)
-                .ticks(7)
-                .tickFormat(d => (d % 1 === 0 ? d : d3.format(".2f")(d))); // No .00, keeps precision if needed
-
-            // Add grid lines
-            svg.append("g")
-                .attr("class", "grid")
-                .call(d3.axisLeft(yScale).tickSize(-width + margin.left + margin.right).tickFormat(""));
-
-            svg.append("g")
-                .attr("class", "grid")
-                .attr("transform", `translate(0, ${height - margin.top - margin.bottom})`)
-                .call(d3.axisBottom(xScale).tickSize(-height + margin.top + margin.bottom).tickFormat(""));
+                .ticks(10) // Force 10 ticks
+                .tickFormat(d => (d % 1 === 0 ? d : d3.format(".2f")(d))); // Keep precision if needed
 
             // Add X Axis
             svg.append("g")
@@ -110,35 +97,8 @@
                 .attr("stroke", "steelblue")
                 .attr("stroke-width", 2)
                 .attr("d", line);
-
-            // Add circles at data points
-            svg.selectAll("circle")
-                .data(data)
-                .enter()
-                .append("circle")
-                .attr("cx", d => xScale(d.date))
-                .attr("cy", d => yScale(d.forexBuying))
-                .attr("r", 3)
-                .attr("fill", "red");
-
-            // Tooltip
-            let tooltip = d3.select("#chart").append("div")
-                .attr("class", "tooltip")
-                .style("position", "absolute")
-                .style("background", "#fff")
-                .style("border", "1px solid #000")
-                .style("padding", "5px")
-                .style("display", "none");
-
-            svg.selectAll("circle")
-                .on("mouseover", function (event, d) {
-                    tooltip.style("display", "block")
-                        .html(`Date: ${d3.timeFormat("%Y-%m-%d")(d.date)}<br>Rate: ${d.forexBuying}`)
-                        .style("left", (event.pageX + 10) + "px")
-                        .style("top", (event.pageY - 20) + "px");
-                })
-                .on("mouseout", () => tooltip.style("display", "none"));
         }
+
     });
 });
 

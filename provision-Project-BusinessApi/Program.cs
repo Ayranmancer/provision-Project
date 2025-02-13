@@ -3,7 +3,6 @@ var builder = WebApplication.CreateBuilder(args);
 builder.WebHost.ConfigureKestrel(options =>
 {
     options.ListenAnyIP(80);
-    //options.ListenAnyIP(443);
 });
 
 builder.Services.AddControllers();
@@ -28,7 +27,7 @@ var app = builder.Build();
 
 app.UseCors("AllowAll"); // Apply CORS policy
 
-//if (app.Environment.IsDevelopment())
+if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();

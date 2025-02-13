@@ -10,7 +10,6 @@ builder.Services.AddDbContext<ApplicationDbContext>(options =>
 builder.WebHost.ConfigureKestrel(options =>
 {
     options.ListenAnyIP(80);
-    //options.ListenAnyIP(443);
 });
 
 builder.Services.AddControllers();
@@ -34,8 +33,10 @@ builder.Services.AddCors(options =>
 
 
 builder.Services.AddSingleton<DatabaseMigrationService>();
-builder.Services.AddHttpClient<TcmbService>(); // Register HttpClient for TcmbService
-builder.Services.AddHostedService<TcmbService>(); // Register as background service
+
+builder.Services.AddHttpClient<TcmbService>();
+builder.Services.AddHostedService<TcmbService>();
+
 builder.Services.AddSingleton<IConnectionMultiplexer>(sp =>
     ConnectionMultiplexer.Connect("redis:6379"));
 
@@ -46,7 +47,7 @@ app.UseCors("AllowAll"); // Apply CORS policy
 var migrationService = app.Services.GetRequiredService<DatabaseMigrationService>();
 await migrationService.MigrateDatabaseAsync();
 
-//if (app.Environment.IsDevelopment())
+if (app.Environment.IsDevelopment())
 {
     app.UseSwagger();
     app.UseSwaggerUI();

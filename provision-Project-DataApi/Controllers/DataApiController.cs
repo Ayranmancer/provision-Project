@@ -23,23 +23,11 @@ public class DataApiController : ControllerBase
     {
         try
         {
-            var endDate = DateTime.Today;
-            var startDate = endDate.AddMonths(-2);
-
-            var fetchedDates = new List<DateTime>();
-            for (var date = startDate; date <= endDate; date = date.AddDays(1))
-            {
-                var rates = await _tcmbService.GetExchangeRatesInitial(date);
-                if (rates != null && rates.Any())
-                {
-                    fetchedDates.Add(date);
-                }
-            }
+            await _tcmbService.FetchAndStoreExchangeRatesAsync(_context);
 
             return Ok(new
             {
                 Message = "Exchange rates fetched and saved successfully.",
-                FetchedDates = fetchedDates
             });
         }
         catch (Exception ex)
@@ -64,15 +52,14 @@ public class DataApiController : ControllerBase
             var startDate = today.AddMonths(-2);
             var exchangeRates = new List<ExchangeRate>();
 
-            // Loop through each day in the last two months
             for (var date = startDate; date <= today; date = date.AddDays(1))
             {
                 if (_tcmbService.IsWeekend(date) || _tcmbService.IsHoliday(date))
                 {
-                    continue; // Skip weekends and holidays
+                    continue;
                 }
 
-                var rates = await _tcmbService.GetExchangeRatesForDate(date, currencyCode);
+                var rates = await _tcmbService.GetExchangeRatesForCurrencyAsync(date, currencyCode);
                 if (rates != null)
                 {
                     exchangeRates.AddRange(rates.Where(r => r.CurrencyCode == currencyCode));
@@ -92,5 +79,4 @@ public class DataApiController : ControllerBase
             return StatusCode(500, new { Message = "An error occurred while retrieving exchange rates.", Error = ex.Message });
         }
     }
-
 }
